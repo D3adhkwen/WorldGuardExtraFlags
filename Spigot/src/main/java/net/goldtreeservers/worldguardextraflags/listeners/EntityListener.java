@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.PortalCreateEvent;
 
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
@@ -85,7 +86,8 @@ public class EntityListener implements Listener
 					event.setCancelled(true);
 
 					//Prevent the player from being allowed to glide by spamming space
-					player.teleport(player.getLocation());
+					//Bypass EssentialsX's teleport invulnerability by setting teleport cause to UNKNOWN
+					player.teleport(player.getLocation(), PlayerTeleportEvent.TeleportCause.UNKNOWN);
 
 					break;
 				}
