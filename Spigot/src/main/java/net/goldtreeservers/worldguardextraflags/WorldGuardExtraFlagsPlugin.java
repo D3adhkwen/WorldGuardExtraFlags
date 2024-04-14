@@ -117,18 +117,20 @@ public class WorldGuardExtraFlagsPlugin extends JavaPlugin
 
 		this.sessionManager.registerHandler(TeleportOnEntryFlagHandler.FACTORY(plugin), null);
 		this.sessionManager.registerHandler(TeleportOnExitFlagHandler.FACTORY(plugin), null);
+
+		this.sessionManager.registerHandler(WalkSpeedFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(FlySpeedFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(FlyFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(GlideFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(GodmodeFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(PlaySoundsFlagHandler.FACTORY(plugin), null);
+		this.sessionManager.registerHandler(BlockedEffectsFlagHandler.FACTORY(), null);
+		this.sessionManager.registerHandler(GiveEffectsFlagHandler.FACTORY(), null);
+
 		this.sessionManager.registerHandler(CommandOnEntryFlagHandler.FACTORY(), null);
 		this.sessionManager.registerHandler(CommandOnExitFlagHandler.FACTORY(), null);
 		this.sessionManager.registerHandler(ConsoleCommandOnEntryFlagHandler.FACTORY(), null);
 		this.sessionManager.registerHandler(ConsoleCommandOnExitFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(WalkSpeedFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(BlockedEffectsFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(GodmodeFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(GiveEffectsFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(FlyFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(FlySpeedFlagHandler.FACTORY(), null);
-		this.sessionManager.registerHandler(PlaySoundsFlagHandler.FACTORY(plugin), null);
-		this.sessionManager.registerHandler(GlideFlagHandler.FACTORY(), null);
 
 		this.getServer().getPluginManager().registerEvents(new PlayerListener(this, this.worldGuardPlugin, this.regionContainer, this.sessionManager), this);
 		this.getServer().getPluginManager().registerEvents(new BlockListener(this.worldGuardPlugin, this.regionContainer, this.sessionManager), this);
@@ -139,7 +141,14 @@ public class WorldGuardExtraFlagsPlugin extends JavaPlugin
 		
 		if (this.protocolLibHelper != null)
 		{
-			this.protocolLibHelper.onEnable();
+			try
+			{
+				this.protocolLibHelper.onEnable();
+			}
+			catch (Throwable ignore)
+			{
+				this.getServer().getPluginManager().registerEvents(new EntityPotionEffectEventListener(this.worldGuardPlugin, this.sessionManager), this);
+			}
 		}
 		else
 		{
@@ -187,19 +196,16 @@ public class WorldGuardExtraFlagsPlugin extends JavaPlugin
 		final int bStatsPluginId = 7301;
 		
         Metrics metrics = new Metrics(this, bStatsPluginId);
-        metrics.addCustomChart(new Metrics.AdvancedPie("flags_count", () ->
+        metrics.addCustomChart(new Metrics.AdvancedPie("flags_used", () ->
 		{
-			Map<Flag<?>, Integer> valueMap = WorldGuardExtraFlagsPlugin.FLAGS.stream().collect(Collectors.toMap(v -> v, v -> 0));
+			Map<Flag<?>, Boolean> valueMap = WorldGuardExtraFlagsPlugin.FLAGS.stream().collect(Collectors.toMap(v -> v, v -> false));
 
 			WorldGuard.getInstance().getPlatform().getRegionContainer().getLoaded().forEach(m ->
 			{
-				m.getRegions().values().forEach(r ->
-				{
-					r.getFlags().keySet().forEach(f -> valueMap.computeIfPresent(f, (k, v) -> 1));
-				});
+				m.getRegions().values().forEach(r -> r.getFlags().keySet().forEach(f -> valueMap.computeIfPresent(f, (k, v) -> true)));
 			});
 
-			return valueMap.entrySet().stream().collect(Collectors.toMap(v -> v.getKey().getName(), v -> v.getValue()));
+			return valueMap.entrySet().stream().collect(Collectors.toMap(v -> v.getKey().getName(), v -> v.getValue() ? 1 : 0));
 		}));
 	}
 	
